@@ -2,6 +2,9 @@
 import tkinter as tk
 import xrpl
 import json
+import qrcode
+from PIL import Image, ImageTk
+
 
 from mod1 import get_account, get_account_info, send_xrp
 
@@ -59,6 +62,30 @@ def operational_send_xrp():
     text_operational_results.insert("1.0",json.dumps(response.result,indent=4))
     get_standby_account_info()
     get_operational_account_info()
+
+# Function to generate and display a QR code for an XRP payment request
+def generate_qr(address, amount):
+    # Basic validation to ensure both fields are filled
+    if not address or not amount:
+        return
+
+    # Construct a URI that can be understood by XRPL wallets like XUMM
+    # Format: xrp:<address>?amount=<value>
+    uri = f"xrp:{address}?amount={amount}"
+
+    # Generate the QR code image from the URI
+    qr = qrcode.make(uri)
+
+    # Resize the QR image to fit inside the UI neatly
+    qr = qr.resize((200, 200))
+
+    # Convert the image to a Tkinter-compatible format
+    qr_img = ImageTk.PhotoImage(qr)
+
+    # Display the QR code in the label widget
+    qr_canvas.config(image=qr_img)
+    qr_canvas.image = qr_img  # Store reference to avoid garbage collection
+
 
 
 # Create a new window with the title "Send and Receive XRP"
@@ -157,6 +184,36 @@ btn_get_op_account_info.grid(row=1, column=3, sticky = "nsew")
 btn_op_send_xrp = tk.Button(master=frm_form, text="< Send XRP",
                             command = operational_send_xrp)
 btn_op_send_xrp.grid(row=2, column = 3, sticky = "nsew")
+
+
+# Create UI elements (Label + Input fields + Button) for QR code generation
+lbl_qr_address = tk.Label(master=frm_form, text="QR Destination Address")  # Label for XRP address input
+ent_qr_address = tk.Entry(master=frm_form, width=50)  # Entry for XRP address
+
+lbl_qr_amount = tk.Label(master=frm_form, text="QR Amount (XRP)")  # Label for amount input
+ent_qr_amount = tk.Entry(master=frm_form, width=50)  # Entry for XRP amount
+
+# Button to trigger QR code generation using entered address and amount
+btn_generate_qr = tk.Button(
+    master=frm_form,
+    text="Generate QR",
+    command=lambda: generate_qr(ent_qr_address.get(), ent_qr_amount.get())
+)
+
+# Label widget to display the QR code image
+qr_canvas = tk.Label(master=frm_form)  # Placeholder for displaying generated QR image
+
+
+# Add QR code-related widgets to the grid layout
+lbl_qr_address.grid(row=8, column=0, sticky="e")
+ent_qr_address.grid(row=8, column=1)
+
+lbl_qr_amount.grid(row=9, column=0, sticky="e")
+ent_qr_amount.grid(row=9, column=1)
+
+btn_generate_qr.grid(row=10, column=1, sticky="w")
+qr_canvas.grid(row=11, column=1, pady=10)  # Shows the generated QR code
+
 
 
 # Start the application
